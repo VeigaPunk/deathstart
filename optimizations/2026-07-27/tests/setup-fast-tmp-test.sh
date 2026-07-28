@@ -40,6 +40,29 @@ assert text.index("target is a root backing disk") < text.index("sfdisk --wipe a
 assert text.index("target already has partitions") < text.index("sfdisk --wipe always")
 assert text.index("wipefs --noheadings") < text.index("sfdisk --wipe always")
 assert text.index('[[ "$CHECK_ONLY" == 1 ]]') < text.index("sfdisk --wipe always")
+assert "TARGET_HOME/tmp-archive" in text, "tmp-archive migration must resolve through TARGET_HOME"
+assert "$HOME/tmp-archive" not in text, "literal $HOME/tmp-archive must not be used"
 PY
+
+TEST_ROOT=$(mktemp -d)
+trap 'rm -rf -- "$TEST_ROOT"' EXIT
+mkdir -p "$TEST_ROOT/target-home/tmp-archive" "$TEST_ROOT/scratch/archive"
+printf 'archive fixture\n' > "$TEST_ROOT/target-home/tmp-archive/from-user-home"
+MIGRATION_BLOCK=$(python - "$SCRIPT" <<'PY'
+import pathlib
+import sys
+
+text = pathlib.Path(sys.argv[1]).read_text()
+start = text.index('if [[ -d "$TARGET_HOME/tmp-archive" ]]')
+end = text.index('\necho "==> 6.', start)
+print(text[start:end])
+PY
+)
+HOME=/root TARGET_HOME="$TEST_ROOT/target-home" MNT="$TEST_ROOT/scratch" \
+  bash -euo pipefail -c "$MIGRATION_BLOCK"
+[[ ! -e "$TEST_ROOT/target-home/tmp-archive" ]]
+[[ -f "$TEST_ROOT/scratch/archive/from-user-home" ]]
+
+echo "PASS: sudo-like HOME uses resolved TARGET_HOME for tmp-archive migration"
 
 echo "PASS: setup-fast-tmp static and negative safety checks"

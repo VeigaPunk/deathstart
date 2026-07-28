@@ -149,12 +149,12 @@ if [[ -d /tmp/opencode && ! -L /tmp/opencode ]]; then
   rmdir /tmp/opencode
   ln -s "$MNT/opencode" /tmp/opencode
 fi
-if [[ -d "$HOME/tmp-archive" ]]; then
+if [[ -d "$TARGET_HOME/tmp-archive" ]]; then
   shopt -s nullglob dotglob
-  ARCHIVE_FILES=("$HOME/tmp-archive/"*)
+  ARCHIVE_FILES=("$TARGET_HOME/tmp-archive/"*)
   ((${#ARCHIVE_FILES[@]} == 0)) || mv -- "${ARCHIVE_FILES[@]}" "$MNT/archive/"
   shopt -u nullglob dotglob
-  rmdir "$HOME/tmp-archive"
+  rmdir "$TARGET_HOME/tmp-archive"
 fi
 
 echo "==> 6. TMPDIR for future shells and systemd user sessions"
