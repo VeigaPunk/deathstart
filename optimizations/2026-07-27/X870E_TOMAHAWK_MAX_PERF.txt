@@ -1,0 +1,76 @@
+================================================================
+ MSI MAG X870E TOMAHAWK WIFI (MS-7E59) - BIOS 2.AC3
+ MAX PERFORMANCE PROFILE - Ryzen 9 9950X / KF560C30 2x16GB
+ Apply in order. Press DEL at boot -> F7 (Advanced Mode)
+================================================================
+
+[1] OC -> Memory
+----------------------------------------------------------------
+ A-XMP (EXPO)                     = Profile 1  (DDR5-6000 CL30 1.40V)
+ FCLK Frequency                   = 2100 MHz   (revert to 2000 if unstable)
+ UCLK DIV1 Mode                   = UCLK = MEMCLK  (1:1)
+ High-Efficiency Mode             = Tighter    (later try: Tightest)
+ Latency Killer                   = Enabled
+ Memory Context Restore           = Disabled for now (enable after 1 week stable)
+ Power Down Enable                = Disabled for now (enable with MCR)
+
+ NOTE: First boot after EXPO = black screen 1-3 min (memory
+ training). DO NOT power off. 3 failed boots = auto-revert.
+
+[2] OC -> Advanced CPU Configuration -> AMD Overclocking -> PBO
+----------------------------------------------------------------
+ Precision Boost Overdrive        = Advanced
+ PBO Limits                       = Motherboard
+ PBO Scalar                       = 10X
+ CPU Boost Clock Override         = +200 MHz
+ Curve Optimizer                  = All Cores / Negative / 15
+                                    (walk to -20 later, test each step)
+ Platform Thermal Limit           = 95 C (leave stock)
+
+[3] OC -> CPU Features   (leave these ON - disabling LOWERS boost)
+----------------------------------------------------------------
+ SMT                              = Enabled
+ Global C-States                  = Enabled
+ CPPC / CPPC Preferred Cores      = Enabled
+
+[4] Settings -> Advanced
+----------------------------------------------------------------
+ PCIe/PCI Subsystem:
+   Re-Size BAR Support            = Enabled
+   Above 4G Memory Decoding       = Enabled
+ Integrated Graphics              = Disabled (RTX 5070 installed)
+ CSM                              = Disabled
+ ErP Ready                        = Disabled
+ Spread Spectrum                  = Disabled
+
+[5] Hardware Monitor
+----------------------------------------------------------------
+ CPU fan / pump curve             = 40% floor, 100% @ 80 C
+ System fans                      = ramp with CPU temp
+ (PBO Motherboard = 230-260W sustained: needs 240mm+ AIO
+  or top-tier air cooler + case airflow over the DIMMs)
+
+[6] HARD SAFETY CEILINGS - never exceed
+----------------------------------------------------------------
+ VSOC (CPU SOC Voltage)           <= 1.30 V absolute max
+                                     (EXPO auto ~1.20V = correct)
+ DRAM Voltage                     = 1.40 V (kit rated, fine)
+
+[7] SAVE AS REUSABLE USB PROFILE  <- do this LAST
+----------------------------------------------------------------
+ 1. F10 -> Save & Reboot -> re-enter BIOS (DEL)
+ 2. OC -> OC Profile (or F8)
+ 3. "Save OC Profile to USB"  -> pick your USB stick
+    -> name it: MAXPERF
+ 4. BIOS writes the binary profile file to the stick.
+    Reload anytime via "Load OC Profile from USB" (F8)
+    after CMOS clears or BIOS experiments.
+ NOTE: profile only re-loads on the SAME BIOS version (2.AC3).
+       After any BIOS flash: redo this list, save a new one.
+
+[8] VALIDATE FROM LINUX after applying
+----------------------------------------------------------------
+ sudo dmidecode -t memory | grep Configured   # expect 6000 MT/s
+ sensors | grep Tctl                          # < 95 C under load
+ stress-ng --cpu 32 --timeout 10m --metrics
+================================================================

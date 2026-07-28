@@ -77,3 +77,64 @@ a repo, tokens in `environment.d` propagate to every process, VRR off on a
 160Hz FreeSync panel (`misc:vrr=2` candidate), idle 150s/152s is stock Omarchy.
 Upstream bug to report: Omarchy `nvidia.sh` appends env to `~/.config/hypr/envs.lua`
 which no code path loads.
+
+## Round 2 — validation & benchmarks (same day, later session)
+
+**All root-script items verified live:** zram 15.4G zstd pri-100 ✓, swappiness
+100 / page-cluster 0 ✓, noatime+compress+discard=async on all btrfs mounts ✓
+(fstrim.timer disabled is correct with discard=async), makepkg -j32 ✓, LLMNR
+off ✓, paccache.timer ✓, TPM units clean (0 failed) ✓, nvidia
+suspend/hibernate/resume + persistenced enabled, PreserveVideoMemoryAllocations
+set ✓. BIOS confirmed **2.AC3** (matches MAXPERF notes — version worry closed).
+
+**Phase-1 parachute gate: PASSED.** journalctl boots -1/-3 ran 6.18.40-2-lts.
+Phase-2 hibernate fix is unblocked (the resume configuration still used an
+unstable kernel device name this boot; do NOT hibernate until phase-2 --apply).
+
+| Test | Result | Verdict |
+|---|---|---|
+| All-core sha256 (openssl -multi 32) | 62.9 GB/s, ~5.10 GHz all-core | PBO healthy |
+| Tctl under all-core load | 95.0°C (rides PBO ceiling) | expected; cooling is the limiter |
+| Cooldown after burn | 60°C within ~1 min | fine |
+| 1T pinned boost | 5.53–5.87 GHz observed | +200 offset active |
+| fio seqread 1M QD8 (btrfs file) | 7.2 GB/s | SN8100 healthy through FS |
+| fio randread 4k QD32 1 job / 8 jobs | 29.4k / 128k IOPS | per-thread btrfs O_DIRECT overhead, not drive |
+| fio randwrite 4k QD32 | 67.8k IOPS (278 MB/s) | btrfs CoW path, normal |
+| NVMe temps under IO | 25–30°C | excellent |
+| LAN / Quad9 RTT | 1.2 ms / 11.1 ms, 2.5GbE | healthy |
+| GPU idle | 23W P3 34°C, driver 610.43.03 open | healthy |
+| Boot | fw 44.1s + loader 3.8s + kernel 5.3s + user 3.8s | fw = memory training (MCR off by design until ~Aug 2) |
+
+**Open queue (root, in order):**
+1. `sudo bash ~/plazir27-remediation/fix-phase2-hibernate.sh --apply` (gate passed)
+2. `sudo paccache -rk2 && sudo paccache -ruk0` (cache 9.6G)
+3. `sudo pacman -Syu` (25 pending)
+4. ~Aug 2 if stable: BIOS → Memory Context Restore + Power Down Enable (kills ~30s of the 44s firmware time)
+5. Optional: 12G `~/.cache/huggingface/hub/models--ggml-org--gpt-oss-20b-GGUF` still present — delete when confirmed done
+6. Optional: provision empty 2nd SN8100 (optional section A of optimize-root.sh)
+
+## Round 2 — execution (pkexec batch, 09:31)
+
+1. **Phase-2 hibernate fix APPLIED.** Stable partition identity and resume offset
+   in limine drop-in; no /dev/ path survives; UKIs rebuilt twice (script + pacman
+   hook) with the fix baked in. Undo pair: `/root/plazir27-backup-2026-07-27/`.
+2. Snapper pre-update snapshot created.
+3. paccache: zero prune candidates — 10G cache is legitimately 2 versions/pkg
+   (rollback policy). `-rk1` would halve it if space ever matters.
+4. **25/25 packages upgraded** (no kernel bump; running 7.1.5 still matches
+   installed). Limine redeployed, walker/elephant restarted, 0 failed units.
+5. /boot 48% used, both UKIs present.
+
+**Pending user actions:** reboot → run the 4 hibernate checks → `systemctl
+hibernate` test. Then ~Aug 2: BIOS MCR + Power Down. Optional: 12G HF cache
+delete, 2nd SN8100 provisioning.
+
+### Round 2 publication safety gate
+
+`scripts/setup-fast-tmp.sh` now accepts only an explicit
+`--disk /dev/disk/by-id/<stable-whole-disk-id>` target. Before `sfdisk`, it
+rejects wildcard or indirect paths, non-disks, existing children/signatures,
+mounts, active holders, and every discovered root backing disk. `--check` exits
+after the complete preflight gate, and `tests/setup-fast-tmp-test.sh` verifies
+argument failures plus static mutation ordering without sudo or block writes.
+Raw kernel NVMe names were also removed from the optional root-script example.

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # optimize-root.sh — root-level optimizations for plazir27 (2026-07-27)
 # Generated after full-system audit. Every section is independent; comment out
-# what you don't want. Run: sudo bash ~/optimize-root.sh
+# what you don't want. Run: sudo bash ~/deathstart/optimizations/2026-07-27/scripts/optimize-root.sh
 set -euo pipefail
 [[ $EUID -eq 0 ]] || { echo "run with sudo"; exit 1; }
 
@@ -94,14 +94,9 @@ echo "BIOS: MCR+PowerDown after stability week, BIOS 2.AC0 vs notes' 2.AC3."
 # ---------------------------------------------------------------------------
 # OPTIONAL (commented out — destructive/opinionated; uncomment deliberately)
 # ---------------------------------------------------------------------------
-# ## A) Put the idle 2nd SN8100 (nvme1n1, 1TB, EMPTY) to work as backup+scratch:
-# parted -s /dev/nvme1n1 mklabel gpt mkpart primary 1MiB 100%
-# mkfs.btrfs -L vault /dev/nvme1n1p1
-# mkdir -p /mnt/vault && mount /dev/nvme1n1p1 /mnt/vault
-# btrfs subvolume create /mnt/vault/@backup   # snapper send/receive target
-# btrfs subvolume create /mnt/vault/@scratch  # builds, docker, HF cache
-# echo "LABEL=vault /mnt/vault btrfs rw,noatime,compress=zstd:3,ssd,discard=async 0 0" >> /etc/fstab
-# ## then: btrfs send of snapper snapshots (btrbk recommended: pacman -S btrbk)
+# ## A) Provision a spare disk only through the guarded by-id workflow:
+# bash setup-fast-tmp.sh --disk /dev/disk/by-id/<stable-whole-disk-id> --check
+# # Review the resolved device and every safety-gate result before omitting --check.
 #
 # ## B) Reclaim 12.1G — unreferenced gpt-oss-20b HF download (verify you're done with it):
 # # rm -rf /home/vhpnk/.cache/huggingface/hub/models--ggml-org--gpt-oss-20b-GGUF
