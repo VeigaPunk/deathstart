@@ -1,5 +1,6 @@
-# Checkpoint 1 (2026-08-20): fnm is the Node manager.
-# Godspeed markers and opencode port-pin are later lanes — do not add them here yet.
+# Checkpoint 1 (2026-08-20): fnm is the Node manager (v24 LTS).
+# Checkpoint 2 (2026-08-20): Godspeed process markers (exported, inherited).
+# OpenCode port-pin is NOT in this file — it broke the TUI last time.
 #
 # Initialize fnm BEFORE the interactive-shell guard so tools launched through
 # non-interactive Bash also inherit Node.
@@ -19,6 +20,16 @@ if command -v fnm >/dev/null 2>&1; then
     eval "$(fnm env --use-on-cd --shell bash)"
   fi
 fi
+
+# Godspeed is a process-level contract: child shells, CLIs, and agent runners
+# inherit these exported markers automatically. Agent-specific roots carry the
+# full instruction text; xask additionally injects the literal prompt suffix.
+# Must live BEFORE the interactive guard or non-interactive agent shells
+# that source bashrc never see them.
+export GODSPEED=1
+export GODSPEED_MODE=always
+export GODSPEED_DELEGATE_SUFFIX=' | godspeed'
+export GODSPEED_EXECUTOR_SUFFIX=' | godspeed-impl'
 
 # If not running interactively, don't do anything (leave this at the top of this file)
 [[ $- != *i* ]] && return
