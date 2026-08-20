@@ -1,8 +1,11 @@
 # Deathstart: System Specification and Configuration Snapshot
 
-> Private workstation inventory captured on 2026-07-27 (America/Sao_Paulo).
+> Current inventory captured on 2026-08-20 (America/Sao_Paulo) after a clean Omarchy **3.8.4** reinstall.
+> Previous capture (2026-07-27) was Omarchy `4.0.0.alpha` (Quattro) and is kept under `optimizations/2026-07-27/` for history only.
 >
 > This is a descriptive snapshot, not a backup. Secrets and unique identifiers are intentionally omitted.
+>
+> Live configs from the 3.8.4 machine: `optimizations/2026-08-20/`.
 
 ## Privacy boundary
 
@@ -13,20 +16,20 @@ The inventory excludes authentication tokens, password-manager data, SSH keys, b
 | Area | Configuration |
 |---|---|
 | Host | `plazir27`, desktop, MSI MS-7E59 v2.0 |
-| OS | Arch Linux, Omarchy `4.0.0.alpha` |
-| Kernel | Linux `7.1.5-arch1-1` with LTS `6.18.40` also installed |
+| OS | Arch Linux, Omarchy `3.8.4` (version file still prints `3.8.3`) |
+| Kernel | Linux `7.1.8-arch1-3` |
 | CPU | AMD Ryzen 9 9950X, 16 cores / 32 threads, up to 5.756 GHz |
-| GPU | NVIDIA GeForce RTX 5070, 12,227 MiB VRAM; integrated AMD Radeon Graphics |
-| RAM | 30 GiB usable |
-| Storage | 2 x WD_BLACK SN8100 1 TB NVMe; root/home on Btrfs |
-| Display | LG UltraWide, 3440x1440 at 84.957 Hz, scale 1.0 |
-| Desktop | Hyprland `0.56.0`, Wayland, Omarchy Matte Black theme |
-| Shell | Bash `5.3.15`, Starship, fnm-managed Node.js |
-| Editor | Neovim `0.12.4`, LazyVim v8 |
-| Terminal | Alacritty `0.17.0`; Ghostty config also present; tmux `3.7_b` |
-| Containers | Docker `29.6.2`, Compose `5.3.1`, overlayfs, systemd cgroups |
-| Local AI | Ollama CUDA `0.32.4`, `gemma4-hvm:official-q4` (14 GB) |
-| Package footprint | 1,066 pacman packages; 192 explicit; 2 foreign/AUR; no Flatpak apps |
+| GPU | NVIDIA GeForce RTX 5070, 12,227 MiB VRAM, driver `610.57.04`; integrated AMD Radeon Graphics |
+| RAM | 2×16 GB Kingston KF560C30-16, configured DDR5-6000, ~30 GiB usable |
+| Storage | 1× WD_BLACK SN8100 1 TB NVMe; root/home on Btrfs. Second SN8100 removed (boot probe errors). |
+| Display | LG UltraWide, 3440x1440 at 100 Hz, compositor scale 1.0, `GDK_SCALE=1` |
+| Desktop | Hyprland `0.56.2`, Wayland, Omarchy Matte Black, JetBrainsMono Nerd Font 13pt |
+| Shell | Bash, Starship, mise-managed Node.js `26.5.0` |
+| Editor | Neovim `0.12.4`, LazyVim |
+| Terminal | Alacritty `0.17.0`; Ghostty/Kitty/Foot configs present; tmux `3.7_b` |
+| Containers | Docker `29.7.2`, Compose `5.4.0`, socket-activated |
+| Local AI | Not reinstalled on 3.8.4 yet |
+| Package footprint | 1,039 pacman packages; 177 explicit; 0 foreign/AUR |
 | GitHub | Authenticated as `VeigaPunk` through `gh`, HTTPS Git transport |
 
 ## Hardware
@@ -34,7 +37,7 @@ The inventory excludes authentication tokens, password-manager data, SSH keys, b
 ### Platform and firmware
 
 - Vendor/model: Micro-Star International, MS-7E59, hardware version 2.0.
-- Firmware: American Megatrends UEFI 2.110, version 2.AC0, dated 2026-05-06.
+- Firmware: American Megatrends UEFI, version 2.AC3, dated 2026-06-25.
 - Boot loader: Limine 12.5.2 using a measured unified kernel image.
 - TPM 2.0: supported.
 - Secure Boot: disabled.
@@ -51,24 +54,24 @@ The inventory excludes authentication tokens, password-manager data, SSH keys, b
 ### Graphics and compute
 
 - Discrete GPU: NVIDIA GeForce RTX 5070, 12,227 MiB VRAM, 250 W power limit.
-- NVIDIA driver: `610.43.03`.
+- NVIDIA driver: `610.57.04`. Persistence daemon enabled; `NVreg_PreserveVideoMemoryAllocations=1` staged for next reboot.
 - CUDA toolkit: `13.3` (`nvcc` 13.3.73).
 - Integrated GPU: AMD Granite Ridge Radeon Graphics.
 
 ### Memory and swap
 
-- RAM: 30 GiB usable; 22 GiB available at capture time.
-- Swap: 34 GiB total, including a 4 GiB zram device.
+- RAM: 2×16 GB Kingston Fury `KF560C30-16` in DIMMA2+DIMMB2, EXPO DDR5-6000 CL30. ~30 GiB usable.
+- Swap: 15.1 GiB zram (zstd, priority 100, `ram/2`) plus a 30.3 GiB Btrfs swapfile (priority 0, hibernate).
+- `vm.swappiness=100`, `vm.page-cluster=0`.
 - `earlyoom` and `zram-generator` are installed.
 
 ### Storage and filesystems
 
 - `nvme0n1`: WD_BLACK SN8100 1 TB.
   - 2 GiB FAT boot partition.
-  - 929.5 GiB Btrfs partition mounted across `/`, `/home`, `/var/log`, and `/var/cache/pacman/pkg`.
-- `nvme1n1`: WD_BLACK SN8100 1 TB, no mounted filesystem observed.
-- Root filesystem usage at capture: 176 GiB of 930 GiB (19%).
-- Snapper configuration: `root` for `/`; `snapper-cleanup.timer` enabled.
+  - 929.5 GiB Btrfs partition mounted across `/`, `/home`, `/var/log`, and `/var/cache/pacman/pkg` with `noatime,compress=zstd:3,ssd,discard=async`.
+- Second SN8100 is **not installed** (removed after boot probe errors).
+- Snapper configuration: `root` for `/` only, `NUMBER_LIMIT=5`, no timeline, `snapper-cleanup.timer` enabled. Limine `SNAPPER_CONFIG_NAME=root`.
 
 ### Networking and peripherals
 
@@ -76,44 +79,43 @@ The inventory excludes authentication tokens, password-manager data, SSH keys, b
 - Qualcomm WCN785x FastConnect 7800 Wi-Fi 7 adapter; Wi-Fi inactive at capture.
 - Bluetooth enabled as a system service.
 - ASMedia ASM4242 USB4 / Thunderbolt 3 host router.
-- Display: LG UltraWide, 3440x1440 at 84.957 Hz.
+- Display: LG UltraWide, 3440x1440 at 100 Hz.
 - Input devices include HyperX Alloy Origins Core, Razer DeathAdder V2, and YubiKey OTP/FIDO/CCID.
 
 ## Operating system and boot
 
-- Arch Linux rolling release with standard `linux` and `linux-lts` kernels installed.
-- Current kernel: `7.1.5-arch1-1`, PREEMPT_DYNAMIC.
+- Arch Linux rolling release on Omarchy stable.
+- Current kernel: `7.1.8-arch1-3`, PREEMPT_DYNAMIC. `linux-lts` is not installed on this reinstall.
 - Boot entry: `Omarchy/linux`, Limine loader, systemd-stub 261.2.
 - Locale: `en_US.UTF-8`.
 - Console/X11 keymap baseline: Brazilian ABNT2; active Hyprland keymap is US.
 - Time zone: `America/Sao_Paulo`; NTP synchronized; RTC uses UTC.
 - Display manager: SDDM.
 - Init/service manager: systemd.
-- Networking: systemd-networkd + systemd-resolved + iwd.
+- Networking: systemd-networkd + systemd-resolved + iwd. LLMNR and MulticastDNS disabled.
 - Firewall package and service: UFW installed and enabled. Runtime rule details were unavailable without privilege escalation.
 
 ## Desktop and user experience
 
 ### Omarchy / Hyprland
 
-- Omarchy version: `4.0.0.alpha`.
-- Hyprland version: `0.56.0`, Wayland session.
+- Omarchy version: `3.8.4` (git tag; version file `3.8.3`).
+- Hyprland version: `0.56.2`, Wayland session. User overlays are **`.conf`**, not Lua.
 - Theme: Matte Black.
-- Font: JetBrainsMono Nerd Font.
-- User Hyprland configuration is Lua-based and imports Omarchy defaults, then overlays:
-  - `~/.config/hypr/monitors.lua`
-  - `~/.config/hypr/input.lua`
-  - `~/.config/hypr/bindings.lua`
-  - `~/.config/hypr/looknfeel.lua`
-  - `~/.config/hypr/autostart.lua`
-- Monitor policy currently declares automatic preferred mode and automatic compositor scale with `GDK_SCALE=2`; the active output resolves to scale 1.0.
+- Font: JetBrainsMono Nerd Font 13pt (terminals); Waybar 16px; GTK Adwaita Sans 13.
+- User Hyprland configuration sources Omarchy defaults, then overlays:
+  - `~/.config/hypr/monitors.conf`
+  - `~/.config/hypr/input.conf`
+  - `~/.config/hypr/bindings.conf`
+  - `~/.config/hypr/looknfeel.conf`
+  - `~/.config/hypr/autostart.conf`
+- Monitor policy: `GDK_SCALE=1`, `monitor = DP-1, 3440x1440@100, 0x0, 1`.
 - Input policy:
   - Caps Lock is Compose.
   - Repeat rate 40/s, delay 250 ms.
   - Num Lock enabled by default.
   - Touchpad clickfinger behavior enabled; scroll factor 0.4.
 - Appearance overrides are presently comments, so Omarchy defaults supply gaps, borders, rounding, layout, and animations.
-- `Agent Wall` windows float.
 - Idle policy launches a screensaver at 150 seconds and locks at 152 seconds; wake restores the display.
 - Night-light profile is identity/no tint at 07:00; automatic warm profile is not enabled.
 
@@ -136,14 +138,11 @@ Web-app bindings are configured for ChatGPT, Grok, HEY Calendar/Mail, YouTube, W
 
 ### Waybar
 
-- Top layer, 130 px height, style hot reload enabled.
-- Left: Omarchy menu, workspaces, custom UFO status strip.
-- Right: horizontal/vertical clocks, weather, updates, voice typing, recording/idle/notification indicators, tray, Bluetooth, network, audio, CPU, and battery.
-- Five persistent workspaces.
-- Update check interval: 21,600 seconds.
-- CPU refresh: 5 seconds; network refresh: 3 seconds.
-- Battery warning/critical thresholds: 20% / 10%.
-- Custom UFO strip script refreshes every 2 seconds.
+- Top layer, 32 px height, style hot reload enabled.
+- Left: Omarchy menu, workspaces.
+- Center: clock, weather, updates, voice typing, recording/idle/notification indicators.
+- Right: tray, Bluetooth, network, audio, CPU, battery.
+- Font 16px (13px on small indicator modules).
 
 ### Terminals and tmux
 
@@ -167,10 +166,7 @@ Web-app bindings are configured for ChatGPT, Grok, HEY Calendar/Mail, YouTube, W
 
 ### Shell and prompt
 
-- Bash initializes fnm before the non-interactive guard so subprocesses inherit Node.
-- Interactive shell sources Omarchy defaults.
-- Godspeed execution markers are exported for agent/child-process inheritance.
-- OpenCode is wrapped to prefer port 4096 only when free, falling back to an ephemeral port for concurrent instances.
+- Interactive shell sources Omarchy defaults. Node comes from **mise** (`node 26.5.0`), not fnm.
 - Grok CLI path and completion are installed.
 - Starship prompt shows directory, Git branch/status, and command result; directory depth is truncated to two components.
 
@@ -186,9 +182,9 @@ Web-app bindings are configured for ChatGPT, Grok, HEY Calendar/Mail, YouTube, W
 | OpenCode | 1.18.6 |
 | Neovim | 0.12.4 |
 | tmux | 3.7_b |
-| Docker | 29.6.2 |
-| Docker Buildx | 0.35.0 |
-| Docker Compose | 5.3.1 |
+| Docker | 29.7.2 |
+| Docker Buildx | 0.36.1 |
+| Docker Compose | 5.4.0 |
 | CMake | 4.4.0 |
 | Make | 4.4.1 |
 | GCC | 16.1.1 |
