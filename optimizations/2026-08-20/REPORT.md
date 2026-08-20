@@ -42,7 +42,7 @@ Leave MCR + Power Down off until a boring week. Do not apply the full `X870E_TOM
 | SwayOSD | `applied/swayosd/style.css` | 13pt. |
 | Input | `applied/hypr/input.conf` | Stock Omarchy already matched: `kb_layout=br`, Caps=Compose, repeat 40/250. |
 | NVIDIA env | `applied/hypr/envs.conf` | 3.8.4 loads `envs.conf` (Quattro Lua did not). `NVD_BACKEND=direct`, `LIBVA_DRIVER_NAME=nvidia`, `__GLX_VENDOR_LIBRARY_NAME=nvidia`. |
-| Node | `applied/mise/config.toml` | mise `node 26.5.0`. Do **not** restore the old fnm `.bashrc` block. |
+| Node | `applied/.bashrc` | **fnm**, Node **v24.19.0 LTS** (`fnm install --lts`). Leak-safe init before the interactive guard; reuse `FNM_MULTISHELL_PATH` so nested non-interactive shells do not mint a symlink each call. Re-front fnm after Omarchy's `mise activate`. mise no longer owns Node. |
 | GitHub | — | `gh` as `VeigaPunk` (HTTPS, keyring). SSH ed25519 `plazir27 3.8.4`. Keys are **not** in this repo. |
 
 ## Applied — root level

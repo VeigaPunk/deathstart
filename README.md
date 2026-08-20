@@ -24,7 +24,7 @@ The inventory excludes authentication tokens, password-manager data, SSH keys, b
 | Storage | 1× WD_BLACK SN8100 1 TB NVMe; root/home on Btrfs. Second SN8100 removed (boot probe errors). |
 | Display | LG UltraWide, 3440x1440 at 100 Hz, compositor scale 1.0, `GDK_SCALE=1` |
 | Desktop | Hyprland `0.56.2`, Wayland, Omarchy Matte Black, JetBrainsMono Nerd Font 13pt |
-| Shell | Bash, Starship, mise-managed Node.js `26.5.0` |
+| Shell | Bash, Starship, **fnm**-managed Node.js `24.19.0` LTS |
 | Editor | Neovim `0.12.4`, LazyVim |
 | Terminal | Alacritty `0.17.0`; Ghostty/Kitty/Foot configs present; tmux `3.7_b` |
 | Containers | Docker `29.7.2`, Compose `5.4.0`, socket-activated |
@@ -166,7 +166,7 @@ Web-app bindings are configured for ChatGPT, Grok, HEY Calendar/Mail, YouTube, W
 
 ### Shell and prompt
 
-- Interactive shell sources Omarchy defaults. Node comes from **mise** (`node 26.5.0`), not fnm.
+- Interactive shell sources Omarchy defaults. Node comes from **fnm** (`v24.19.0` LTS), not mise. `~/.bashrc` inits fnm before the interactive guard and reuses `FNM_MULTISHELL_PATH` for nested agent shells.
 - Grok CLI path and completion are installed.
 - Starship prompt shows directory, Git branch/status, and command result; directory depth is truncated to two components.
 
