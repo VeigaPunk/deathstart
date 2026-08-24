@@ -1,0 +1,3 @@
+DO NOT RUN. Phase-0 consult contamination. Not SSoT.
+
+`finish-durable-layout.sh` would bind-mount `/var/cache/pacman/pkg` onto `/scratch` and rewrite `vm.dirty_*`. The accepted layout keeps `@pkg` on the OS subvolume, `/tmp` as tmpfs, and `/scratch` for spark/build scratch only.

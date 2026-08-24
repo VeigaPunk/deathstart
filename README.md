@@ -68,10 +68,10 @@ The inventory excludes authentication tokens, password-manager data, SSH keys, b
 
 ### Storage and filesystems
 
-- `nvme0n1`: WD_BLACK SN8100 1 TB.
-  - 2 GiB FAT boot partition.
-  - 929.5 GiB Btrfs partition mounted across `/`, `/home`, `/var/log`, and `/var/cache/pacman/pkg` with `noatime,compress=zstd:3,ssd,discard=async`.
-- Second SN8100 is **not installed** (in the drawer; seating target **M2_2**, CPU Gen5 / USB4 share). Post-reboot `/scratch` unit: `deathstart-nvme-post.service`.
+- OS disk: WD_BLACK SN8100 1 TB (serial flips kernel name after the second drive is seated; fstab/resume use UUID/PARTUUID).
+  - 2 GiB FAT `/boot`.
+  - 929.5 GiB Btrfs across `/`, `/home`, `/var/log`, and `/var/cache/pacman/pkg` (`@` `@home` `@log` `@pkg`) with `noatime,compress=zstd:3,ssd,discard=async`.
+- Second SN8100 is **seated in M2_2** (CPU Gen5 **x2** so rear USB4 stays up). Btrfs label `fastscratch` at `/scratch`, `nofail` in fstab. Hot temp stays on tmpfs `/tmp` (not `--full-tmp`). Swarm root: `XBRD_SPARK_ROOT=/scratch/xbrd-spark`. Unit: `deathstart-nvme-post.service`.
 - Snapper configuration: `root` for `/` only, `NUMBER_LIMIT=5`, no timeline, `snapper-cleanup.timer` enabled. Limine `SNAPPER_CONFIG_NAME=root`.
 
 ### Networking and peripherals

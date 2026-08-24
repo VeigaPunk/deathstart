@@ -1,0 +1,19 @@
+[Unit]
+Description=Deathstart post-reboot NVMe verify via xask K2.7 Coding Highspeed
+After=deathstart-nvme-post.service network-online.target
+Wants=network-online.target
+# Do not Requires= the provision unit — SKIP_NOT_INSERTED is a successful skip.
+
+[Service]
+Type=oneshot
+User=vgpnk
+Group=vgpnk
+WorkingDirectory=/home/vgpnk/Projects/deathstart
+Environment=HOME=/home/vgpnk
+Environment=XASK_TIMEOUT_SECS=0
+ExecStart=/home/vgpnk/Projects/deathstart/optimizations/2026-08-23/post-reboot-nvme-verify.sh
+TimeoutStartSec=240
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

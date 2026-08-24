@@ -1,2 +1,4 @@
 # Host-local apply inputs with live PARTUUID/offset. Snapshot uses etc/*.sanitized.
 etc/*.intended
+last-verify.txt
+last-verify-xask.txt

@@ -10,8 +10,8 @@ Live machine still has the 2026-08-20 user/root configs. This pass does **not** 
 |---|---|
 | Board | MSI MAG X870E TOMAHAWK WIFI (MS-7E59) v2.0 |
 | BIOS | AMI 2.AC3 |
-| Storage | 1× WD_BLACK SN8100 1 TB live (`nvme0`, M2_1). Second SN8100 still **in the drawer**, seating target **M2_2** (CPU Gen5; shares rear USB4). |
-| Hibernate | Swapfile 30.3G on root btrfs, `resume_offset` unchanged. UKI now embeds `resume=PARTUUID=<redacted>` (this running kernel still shows the old cmdline until reboot). |
+| Storage | 2× WD_BLACK SN8100 1 TB. OS is the original disk (kernel name **flipped** to `nvme1` after insert). Spare is M2_2 at Gen5 **x2** (USB4 live), btrfs `fastscratch` on `/scratch`. |
+| Hibernate | Swapfile 30.3G on root btrfs. Live cmdline is `resume=PARTUUID=<redacted>` (not `/dev/nvme*`). |
 | Kernel | `7.1.8-arch1-3` |
 | Omarchy | `3.8.4` |
 
@@ -39,10 +39,28 @@ Sanitized copies: `etc/limine.sanitized`, `etc/resume.conf.sanitized`. Host-loca
 
 Live skip probe (no spare seated): `SKIP_NOT_INSERTED`, exit 0.
 
+## Post-insert (same day, after M2_2 seat)
+
+Insert + provision already ran this boot. Kernel names flipped; PARTUUID resume held. First `deathstart-nvme-post.service` attempt failed because `setup-fast-tmp.sh` lacked `+x`; a later `sudo -n` run formatted `fastscratch` and stamped `/var/lib/deathstart/nvme-post.done`.
+
+Follow-up (no mkfs, no `--full-tmp`, no `@pkg` bind, no `CARGO_HOME` move):
+
+| Change | Result |
+|---|---|
+| `/scratch` fstab | `nofail,x-systemd.device-timeout=8s` so boot does not stall if the spare is pulled |
+| Unit | `After=home.mount`; skip path is idempotent; `reset-failed` on skip; live unit **active** |
+| tmpfs | `/tmp` remains systemd `tmp.mount` (15.1G). Global `TMPDIR=/scratch/tmp` stays stripped |
+| Spark I/O | `XBRD_SPARK_ROOT=/scratch/xbrd-spark` in `environment.d` + user systemd env. New spark files land on the spare NVMe. 43G leftover under `~/.local/share/xbrd-spark` **not** migrated |
+| Consult quarantine | Deleted `~/.config/environment.d/99-durable-cache.conf` (`CARGO_HOME=/scratch/...` login landmine). `finish-durable-layout.sh` not executed |
+| xask timeout | Host `XASK_TIMEOUT_SECS=0`; verify unit matches. Upstream: `xbrd-gdsp-fknpft` `00b5294`, `ds4cc-marketplace` `4c412fe` |
+
 ## Intentionally not done this pass
 
-- Physical insert / `sfdisk` / `mkfs` of the spare
 - `--full-tmp` (would mask `tmp.mount`)
+- Pacman `@pkg` bind onto `/scratch`
+- Relocating `CARGO_HOME` / `~/.cargo`
+- Moving the 43G leftover `~/.local/share/xbrd-spark`
+- BIOS M2_2 x4 (would kill rear USB4)
 - Raising sekhmet 64 / io_uring
 - `omarchy refresh` / `~/.local/share/omarchy/`
 - Rewriting Snapper snapshot #1 cmdline
@@ -51,20 +69,15 @@ Live skip probe (no spare seated): `SKIP_NOT_INSERTED`, exit 0.
 ## Verify (no secrets)
 
 ```
-# UKI / configs (this boot's /proc/cmdline stays old until reboot)
 grep resume= /etc/limine-entry-tool.d/resume.conf   # PARTUUID, not /dev/nvme
 grep resume= /etc/default/limine                    # none (SSoT comment only)
+tr ' ' '\n' </proc/cmdline | grep resume            # PARTUUID
 systemctl is-enabled deathstart-nvme-post.service   # enabled
-sudo -n -l | grep post-reboot-nvme                  # NOPASSWD
+systemctl is-active deathstart-nvme-post.service    # active (exited)
 sudo -n /home/vgpnk/Projects/deathstart/optimizations/2026-08-23/post-reboot-nvme.sh
-# → SKIP_NOT_INSERTED while the spare is in the drawer
-```
-
-After the M2_2 insert boot:
-
-```
-systemctl status deathstart-nvme-post.service
-ls /sys/class/nvme
-findmnt /scratch
-tr ' ' '\n' </proc/cmdline | grep resume   # PARTUUID
+# → SKIP already done + /scratch mounted
+findmnt -n /scratch /tmp
+# /scratch = spare NVMe btrfs; /tmp = tmpfs
+grep nofail /etc/fstab
+test ! -f ~/.config/environment.d/99-durable-cache.conf
 ```

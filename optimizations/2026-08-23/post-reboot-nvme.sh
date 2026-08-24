@@ -22,6 +22,47 @@ OS_BYID=/dev/disk/by-id/nvme-WD_BLACK_SN8100_1000GB_${OS_SERIAL}
 
 log() { echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) $*" | tee -a "$LOG"; }
 
+UNIT_DIR=$(cd "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+
+# Idempotent boot hygiene: nofail scratch, never --full-tmp, never @pkg bind.
+ensure_scratch_durable() {
+	chmod +x "$SETUP" 2>/dev/null || true
+	systemctl reset-failed deathstart-nvme-post.service 2>/dev/null || true
+	if [[ -f $UNIT_DIR/deathstart-nvme-post.service ]]; then
+		install -m 0644 "$UNIT_DIR/deathstart-nvme-post.service" /etc/systemd/system/deathstart-nvme-post.service
+	fi
+	if [[ -f $UNIT_DIR/deathstart-nvme-verify.service ]]; then
+		install -m 0644 "$UNIT_DIR/deathstart-nvme-verify.service" /etc/systemd/system/deathstart-nvme-verify.service
+	fi
+	systemctl daemon-reload 2>/dev/null || true
+
+	local uuid wanted
+	uuid=$(findmnt -n -o UUID "$MNT" 2>/dev/null || true)
+	if [[ -z $uuid ]]; then
+		log "WARN no UUID for $MNT; skip fstab nofail"
+		return 0
+	fi
+	wanted="compress=zstd:3,noatime,nofail,x-systemd.device-timeout=8s"
+	if grep -qE "^UUID=$uuid[[:space:]]+$MNT[[:space:]]" /etc/fstab; then
+		if grep -E "^UUID=$uuid[[:space:]]+$MNT[[:space:]]" /etc/fstab | grep -q 'nofail'; then
+			log "fstab $MNT already has nofail"
+		else
+			cp -a /etc/fstab "/etc/fstab.bak.$(date -u +%Y%m%dT%H%M%SZ)"
+			awk -v uuid="UUID=$uuid" -v mnt="$MNT" -v opts="$wanted" '
+				$1==uuid && $2==mnt && $3=="btrfs" { $4=opts }
+				{ print }
+			' /etc/fstab >"/etc/fstab.tmp.$$"
+			mv "/etc/fstab.tmp.$$" /etc/fstab
+			log "fstab $MNT options -> $wanted"
+		fi
+	else
+		log "WARN no fstab line for UUID=$uuid $MNT"
+	fi
+	mkdir -p "$MNT/xbrd-spark" "$MNT/tmp"
+	chmod 1777 "$MNT/tmp" || true
+	chown -R "$TARGET_USER":"$TARGET_USER" "$MNT/xbrd-spark" || true
+}
+
 if [[ $EUID -ne 0 ]]; then
 	exec sudo -n "$0" "$@"
 fi
@@ -33,6 +74,7 @@ chmod 644 "$LOG" || true
 log "start pid=$$"
 
 if [[ -f $STAMP_FILE ]] && findmnt -n "$MNT" >/dev/null 2>&1; then
+	ensure_scratch_durable
 	log "SKIP already done ($(cat "$STAMP_FILE")) and $MNT mounted"
 	exit 0
 fi
@@ -146,6 +188,7 @@ EOF
 chown "$TARGET_USER":"$TARGET_USER" "$SPARK_ENV"
 
 date -u +%Y-%m-%dT%H:%M:%SZ >"$STAMP_FILE"
+ensure_scratch_durable
 log "DONE $MNT mounted=$(findmnt -n -o SOURCE,FSTYPE,OPTIONS $MNT || echo none)"
 log "XBRD_SPARK_ROOT=/scratch/xbrd-spark (user environment.d; re-login to pick up)"
 exit 0

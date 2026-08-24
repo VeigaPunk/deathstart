@@ -1,7 +1,7 @@
 [Unit]
 Description=Deathstart post-reboot second NVMe /scratch setup
-After=local-fs.target systemd-udevd.service
-Wants=systemd-udevd.service
+After=local-fs.target home.mount systemd-udevd.service
+Wants=systemd-udevd.service home.mount
 # Do not block boot if the spare is still in the drawer.
 
 [Service]
