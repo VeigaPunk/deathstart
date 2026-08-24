@@ -1,0 +1,15 @@
+[Unit]
+Description=Deathstart post-reboot second NVMe /scratch setup
+After=local-fs.target systemd-udevd.service
+Wants=systemd-udevd.service
+# Do not block boot if the spare is still in the drawer.
+
+[Service]
+Type=oneshot
+ExecStart=/home/vgpnk/Projects/deathstart/optimizations/2026-08-23/post-reboot-nvme.sh
+Environment=SUDO_USER=vgpnk
+TimeoutStartSec=180
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

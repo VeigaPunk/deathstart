@@ -1,0 +1,5 @@
+# Scoped NOPASSWD for post-reboot NVMe catch-up. Not ALL.
+# visudo -c -f this file before install.
+vgpnk ALL=(root) NOPASSWD: /home/vgpnk/Projects/deathstart/optimizations/2026-08-23/post-reboot-nvme.sh
+vgpnk ALL=(root) NOPASSWD: /usr/bin/systemctl start deathstart-nvme-post.service
+vgpnk ALL=(root) NOPASSWD: /usr/bin/systemctl restart deathstart-nvme-post.service

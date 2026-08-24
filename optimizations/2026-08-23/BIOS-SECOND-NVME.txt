@@ -1,0 +1,83 @@
+================================================================
+ MSI MAG X870E TOMAHAWK WIFI (MS-7E59) - BIOS 2.AC3
+ SECOND NVMe — IN-BETWEEN CARD (power-off → BIOS → seat → boot)
+ Spare SN8100 is in the drawer. OS SN8100 stays in M2_1.
+ Chosen extra slot: M2_2 (CPU PCIe 5.0). Chipset M2_3/M2_4 still OK later.
+================================================================
+
+ORDER — do not skip
+----------------------------------------------------------------
+ 1. This Linux session: do NOT hibernate. Shut down fully (power off).
+ 2. Enter BIOS (DEL). Apply the M2_2 / USB4 block below. F10 save if you
+    change anything, then power off again before seating if the board
+    wants a cold plug (MSI: power off, then seat).
+ 3. Seat the spare SN8100 in M2_2 (see physical map).
+ 4. Boot the NORMAL Omarchy entry (not Snapshots).
+ 5. After boot, systemd unit deathstart-nvme-post.service runs by itself
+    (passwordless). It will --check then provision /scratch if the disk
+    is empty. It will NOT mkfs the OS disk. It will NOT --full-tmp.
+
+Do not run setup-fast-tmp.sh by hand unless the unit failed.
+
+PHYSICAL MAP (board vertical, I/O shield up — confirm silkscreen)
+----------------------------------------------------------------
+ M2_1  CPU Gen5 x4     OS SN8100 serial 253575801132   DO NOT MOVE
+ M2_2  CPU Gen5 x4     SPARE SN8100                    USE THIS
+                         SHARES lanes with rear USB4 / USB 40Gbps Type-C
+ M2_3  chipset Gen4 x4 optional extra later (no USB4 share)
+ M2_4  chipset Gen4 x4 optional extra later (no USB4 share)
+
+BIOS — in-between (F7 Advanced). Do not retune EXPO/PBO this pass.
+----------------------------------------------------------------
+ Settings → Advanced
+   CSM                              = Disabled
+   Fast Boot / Fast BIOS            = Disabled if the option exists
+   NVMe RAID / RST / RAID mode      = Disabled (native AHCI/NVMe, not a volume)
+
+ Settings → Advanced → PCIe/PCI Subsystem  (names vary slightly by 2.AC3)
+   M2_2 / Rear USB4 share:
+
+   DEFAULT with a drive in M2_2 (no BIOS toggle):
+     Both M2_2 and rear USB 40Gbps Type-C run PCIe 5.0 **x2**.
+     USB4 stays alive. Drive is still fast enough for /scratch.
+
+   OPTIONAL full x4 on the spare (kills rear USB4):
+     Switch M2_2 to PCIe 5.0 **x4**.
+     This **disables** the rear USB 40Gbps Type-C / USB4 ports.
+     Only do this if you do not need rear USB4.
+
+   Do NOT enable NVMe RAID just to “see” the second disk.
+   Secure Boot stays off.
+
+ Then F10 Save & Exit.
+
+WHY THIS BOOT IS SAFE
+----------------------------------------------------------------
+ Hibernate resume was rewritten to PARTUUID of the OS btrfs (nvme0n1p2)
+ before you power off. A new disk becoming nvme0 will not steal hibernate.
+ This running kernel still shows the OLD cmdline until the next boot —
+ that is expected. After the first boot onto the new UKI you should see:
+
+   resume=PARTUUID=<redacted>
+
+ Do not pick Limine **Snapshots** #1 for this boot (that entry still has
+ the old resume=/dev/nvme0n1p2). Use the normal Omarchy/linux UKI.
+
+AFTER BOOT — you should not have to type a password
+----------------------------------------------------------------
+ systemctl status deathstart-nvme-post.service
+ journalctl -u deathstart-nvme-post.service -b
+ ls /sys/class/nvme
+ ls -l /dev/disk/by-id | grep SN8100
+ findmnt /scratch
+
+ Expect two SN8100 serials. New serial ≠ 253575801132.
+ /scratch mounted, label fastscratch, XBRD_SPARK_ROOT=/scratch/xbrd-spark
+
+ROLLBACK (if the new UKI misbehaves)
+----------------------------------------------------------------
+ sudo cp -a /etc/default/limine.bak.20260824T000257Z /etc/default/limine
+ sudo cp -a /etc/limine-entry-tool.d/resume.conf.bak.20260824T000257Z \
+            /etc/limine-entry-tool.d/resume.conf
+ sudo limine-update
+================================================================

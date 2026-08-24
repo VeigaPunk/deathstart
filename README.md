@@ -2,10 +2,11 @@
 
 > Current inventory captured on 2026-08-20 (America/Sao_Paulo) after a clean Omarchy **3.8.4** reinstall.
 > Previous capture (2026-07-27) was Omarchy `4.0.0.alpha` (Quattro) and is kept under `optimizations/2026-07-27/` for history only.
+> NVMe / hibernate-resume overlay: `optimizations/2026-08-23/` (2026-08-23).
 >
 > This is a descriptive snapshot, not a backup. Secrets and unique identifiers are intentionally omitted.
 >
-> Live configs from the 3.8.4 machine: `optimizations/2026-08-20/`.
+> Live configs from the 3.8.4 machine: `optimizations/2026-08-20/` plus the 2026-08-23 overlay.
 
 ## Privacy boundary
 
@@ -21,7 +22,7 @@ The inventory excludes authentication tokens, password-manager data, SSH keys, b
 | CPU | AMD Ryzen 9 9950X, 16 cores / 32 threads, up to 5.756 GHz |
 | GPU | NVIDIA GeForce RTX 5070, 12,227 MiB VRAM, driver `610.57.04`; integrated AMD Radeon Graphics |
 | RAM | 2×16 GB Kingston KF560C30-16, configured DDR5-6000, ~30 GiB usable |
-| Storage | 1× WD_BLACK SN8100 1 TB NVMe; root/home on Btrfs. Second SN8100 removed (boot probe errors). |
+| Storage | 1× WD_BLACK SN8100 1 TB NVMe; root/home on Btrfs. Second SN8100 in the drawer, seating **M2_2**. Hibernate resume is PARTUUID in the UKI (`optimizations/2026-08-23/`). |
 | Display | LG UltraWide, 3440x1440 at 100 Hz, compositor scale 1.0, `GDK_SCALE=1` |
 | Desktop | Hyprland `0.56.2`, Wayland, Omarchy Matte Black, JetBrainsMono Nerd Font 13pt |
 | Shell | Bash, Starship, **fnm**-managed Node.js `24.19.0` LTS |
@@ -70,7 +71,7 @@ The inventory excludes authentication tokens, password-manager data, SSH keys, b
 - `nvme0n1`: WD_BLACK SN8100 1 TB.
   - 2 GiB FAT boot partition.
   - 929.5 GiB Btrfs partition mounted across `/`, `/home`, `/var/log`, and `/var/cache/pacman/pkg` with `noatime,compress=zstd:3,ssd,discard=async`.
-- Second SN8100 is **not installed** (removed after boot probe errors).
+- Second SN8100 is **not installed** (in the drawer; seating target **M2_2**, CPU Gen5 / USB4 share). Post-reboot `/scratch` unit: `deathstart-nvme-post.service`.
 - Snapper configuration: `root` for `/` only, `NUMBER_LIMIT=5`, no timeline, `snapper-cleanup.timer` enabled. Limine `SNAPPER_CONFIG_NAME=root`.
 
 ### Networking and peripherals
